@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Size of the shape (circle) -->
+    <size
+        android:width="150dp"
+        android:height="150dp" />
+
+    <!-- Transparent background (no fill) -->
+    <solid android:color="@android:color/transparent" />
+
+    <!-- Green border -->
+    <stroke
+        android:color="#00FF00"
+    android:width="1dp" />        <!-- Border width -->
+
+    <!-- Circular shape by setting the corner radius to half the width/height -->
+    <corners android:radius="75dp" />  <!-- Half of the width/height for a perfect circle -->
+</shape>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "105794417984",
+    "project_id": "e-reklamo-f449d",
+    "storage_bucket": "e-reklamo-f449d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:105794417984:android:5137d8386e1963720536a5",
+        "android_client_info": {
+          "package_name": "com.example.e_reklamo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVIfHpfym61nos8OpmyeKWGFqCwbyrHKQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
