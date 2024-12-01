@@ -19,7 +19,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="12/14/2002"
-            android:paddingBottom="20dp"/>
+            android:paddingBottom="20dp"
+            android:layout_marginBottom="15dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:background="@drawable/uploadimgbackground">
+            <ImageView
+                android:id="@+id/postImageView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="20dp"
+                android:src="@drawable/uploadimg" />
+        </LinearLayout>
 
         <EditText
             android:id="@+id/postEditText"
@@ -30,6 +44,7 @@
             android:paddingTop="30dp"
             android:paddingBottom="30dp"
             android:paddingStart="20dp"
+            android:layout_marginTop="15dp"
             android:paddingEnd="20dp" />
 
         <LinearLayout

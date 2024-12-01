@@ -142,10 +142,8 @@
                 android:visibility="gone"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/selectpostoption" />
+                android:layout_marginTop="-500dp"
+                android:layout_gravity="center"/>
             <!--endregion-->
         </LinearLayout>
             <!--endregion-->
@@ -179,6 +177,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center">
                     <ImageView
+                        android:id="@+id/profilepic"
                         android:layout_width="50dp"
                         android:layout_height="50dp"
                         android:src="@drawable/oval" />
@@ -275,5 +274,4 @@
             android:drawablePadding="10dp" />
         </LinearLayout>
     <!--endregion Navigation Drawer -->
-
 </androidx.drawerlayout.widget.DrawerLayout>

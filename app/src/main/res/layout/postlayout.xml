@@ -31,6 +31,7 @@
                 app:layout_constraintTop_toTopOf="parent">
 
                 <ImageView
+                    android:id="@+id/postprofile"
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginEnd="10dp"
@@ -70,7 +71,7 @@
                 app:layout_constraintTop_toTopOf="parent"
                 android:layout_marginEnd="20dp"
                 android:textStyle="bold"
-                android:textColor="#FF0000"/>
+                android:textColor="#FF0000" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
         <!--endregion-->
@@ -89,19 +90,26 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="12/12/2024"
-                android:layout_marginBottom="20dp"/>
+                android:layout_marginBottom="5dp"/>
 
             <TextView
                 android:id="@+id/postcontent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Violets are blue, roses are red the plane is too low"/>
-            <ImageView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:src="@drawable/sampleimg"
+                android:gravity="center"
                 android:layout_marginTop="20dp"
-                android:visibility="gone"/>
+                android:layout_marginBottom="20dp">
+                <ImageView
+                    android:id="@+id/postImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="200dp"
+                    android:src="@drawable/sampleimg"
+                    />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

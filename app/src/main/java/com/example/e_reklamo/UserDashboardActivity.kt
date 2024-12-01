@@ -1,11 +1,15 @@
 package com.example.e_reklamo
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.view.View
 import android.view.View.*
 import android.view.WindowInsets
@@ -17,20 +21,26 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.graphics.Color
 import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.LayoutManager
+import com.bumptech.glide.Glide
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,6 +67,22 @@ class UserDashboardActivity : AppCompatActivity() {
     private lateinit var recycleriew: RecyclerView
     private lateinit var progressBar: ProgressBar
 
+    private lateinit var ProfilePic: ImageView
+    private lateinit var postImage: ImageView
+    private lateinit var OfficialImage: ImageView
+
+    private val supabase = createSupabaseClient(
+        supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
+        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYWJxbWFvb2NxaXFqbGJqeW1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4NTQyODcsImV4cCI6MjA0ODQzMDI4N30.m0Mi4G4Henu9nt_E4P0TqJVKe_Q1S6ZhC7UkLRWpTsA"
+    ) {
+        install(Storage)
+    }
+
+    private val bucket = supabase.storage.from("images")  // Use the bucket name
+
+    private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
+
+
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +93,7 @@ class UserDashboardActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
 
         makeFullscreen()
         //region Retrieve Shared Preference
@@ -79,6 +106,7 @@ class UserDashboardActivity : AppCompatActivity() {
         val barangay = sharedPreferences.getString("barangay", "")
         val position = sharedPreferences.getString("position", "citizen")
         val accounttype = sharedPreferences.getString("accounttype", "user")
+        val profilUri = sharedPreferences.getString("profileImage", "")
         //endregion
         //region Navbar Behavior
         val navbar = findViewById<ImageView>(R.id.navbar)
@@ -100,6 +128,7 @@ class UserDashboardActivity : AppCompatActivity() {
         addresstxt = findViewById(R.id.addresstxtview)
         //endregion
         progressBar = findViewById(R.id.progressbaR)
+        ProfilePic = findViewById(R.id.profilepic)
         recycleriew = findViewById(R.id.recyclerView)
         recycleriew.layoutManager = LinearLayoutManager(this)
         NewsBtn = findViewById(R.id.newsbtn)
@@ -132,6 +161,10 @@ class UserDashboardActivity : AppCompatActivity() {
         phonetxt.text = contact
         emailtext.text = email
         addresstxt.text = "$street, $barangay"
+        Glide.with(this)
+            .load(profilUri)
+            .circleCrop()
+            .into(ProfilePic)
 
         //region Card visibility Condition
         val cardInfo = findViewById<View>(R.id.cardinfo)
@@ -140,19 +173,31 @@ class UserDashboardActivity : AppCompatActivity() {
         line.visibility = if (accounttype == "admin") { GONE } else { VISIBLE }
         //endregion
 
+        var navBtnClicked = 0
         postContent = findViewById(R.id.post)
         postContent.visibility = if (accounttype == "admin") { GONE } else { VISIBLE }
-        postContent.setOnClickListener { showPostDialog() }
+        postContent.setOnClickListener {
+            if(navBtnClicked == 0){
+                showPostDialog(accounttype.toString())
+            } else if(navBtnClicked == 1){
+                AddDataUsingNavbar(1)
+            } else if(navBtnClicked == 2){
+                AddDataUsingNavbar(2)
+            }
+        }
 
         findViewById<TextView>(R.id.nav_home).setOnClickListener {
+            navBtnClicked = 0
             Toast.makeText(this, "Home clicked", Toast.LENGTH_SHORT).show()
             drawerLayout.closeDrawer(GravityCompat.START)
         }
         findViewById<TextView>(R.id.nav_officials).setOnClickListener {
+            navBtnClicked = 1
             Toast.makeText(this, "Barangay Officials clicked", Toast.LENGTH_SHORT).show()
             drawerLayout.closeDrawer(GravityCompat.START)
         }
         findViewById<TextView>(R.id.nav_hotlines).setOnClickListener {
+            navBtnClicked = 2
             Toast.makeText(this, "Hotlines clicked", Toast.LENGTH_SHORT).show()
             drawerLayout.closeDrawer(GravityCompat.START)
         }
@@ -169,13 +214,36 @@ class UserDashboardActivity : AppCompatActivity() {
 
             drawerLayout.closeDrawer(GravityCompat.START)
         }
+
+        imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                if(navBtnClicked == 0){
+
+                }
+                val data: Intent? = result.data
+                val selectedImageUri = data?.data
+                selectedImageUri?.let { uri ->
+                    // Show selected image in the ImageView
+                    if(navBtnClicked == 0){
+                        Glide.with(this).load(uri).into(postImage)
+                        postImage.tag = uri // Use tag to store the URI
+
+                    } else if(navBtnClicked == 1 || navBtnClicked == 2){
+                        Glide.with(this).load(uri).into(OfficialImage)
+                        OfficialImage.tag = uri // Use tag to store the URI
+                    }
+
+                    // Optionally, you can store this URI for later upload to Supabase
+                }
+            }
+        }
+
     }
     fun getPostsFromFirebase(accountType: String) {
         progressBar.visibility = VISIBLE
         val postsList = mutableListOf<Map<String, Any>>()
         val database = FirebaseDatabase.getInstance().reference
-
-        // Get all users
+        database.keepSynced(true)
         database.child("Users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (userSnapshot in snapshot.children) {
@@ -184,6 +252,7 @@ class UserDashboardActivity : AppCompatActivity() {
                     if (userAccountType == accountType) {
                         val name = userSnapshot.child("Info").child("name").getValue(String::class.java).orEmpty()
                         val position = userSnapshot.child("Info").child("position").getValue(String::class.java).orEmpty()
+                        val profileUri = userSnapshot.child("Info").child("profileImage").getValue(String::class.java).orEmpty()
 
                         userSnapshot.child("Post").children.forEach { postSnapshot ->
                             val content = postSnapshot.child("content").getValue(String::class.java).orEmpty()
@@ -193,6 +262,7 @@ class UserDashboardActivity : AppCompatActivity() {
 
                             // We assume that you are saving the timestamp in milliseconds
                             val timestamp = postSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
+                            val ImageUrl = postSnapshot.child("imageUrl").getValue(String::class.java).orEmpty()
 
                             val postMap = mapOf(
                                 "name" to name,
@@ -201,13 +271,13 @@ class UserDashboardActivity : AppCompatActivity() {
                                 "date" to date,
                                 "postkey" to PostKey,
                                 "keysecret" to KeySecret,
-                                "timestamp" to timestamp
+                                "timestamp" to timestamp,
+                                "imageUrl" to ImageUrl,
+                                "profileImage" to profileUri,
                             )
-
                             postsList.add(postMap)
                         }
                     }
-
                     progressBar.visibility = GONE
                 }
 
@@ -227,7 +297,7 @@ class UserDashboardActivity : AppCompatActivity() {
     }
 
     //region Post Dialog
-    private fun showPostDialog() {
+    private fun showPostDialog(accountType: String) {
         // Create the Dialog
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.postcontent)
@@ -244,11 +314,19 @@ class UserDashboardActivity : AppCompatActivity() {
         val postBtn: Button = dialog.findViewById(R.id.postButton)
         val contentEdit: EditText = dialog.findViewById(R.id.postEditText)
 
+        postImage = dialog.findViewById(R.id.postImageView)
+        postImage.setOnClickListener{
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imagePickerLauncher.launch(intent)
+            //open gallery to choose iamge, then preview it to itselft, then upload the image in
+            //supabase and save the link to firebase
+        }
+
         postBtn.setOnClickListener {
             val content = contentEdit.text.toString().trim()
 
             if (content.isNotEmpty()) {
-                savePostToFirebase(content, currentDate)
+                savePostToFirebase(content, currentDate, postImage, accountType)
                 dialog.dismiss() // Close the dialog after saving
             } else {
                 contentEdit.error = "Content cannot be empty"
@@ -258,63 +336,174 @@ class UserDashboardActivity : AppCompatActivity() {
         dialog.show()
     }
     //endregion
-    //region Save the posted content to database
-    private fun savePostToFirebase(content: String, currentDate: String) {
-        val username = sharedPreferences.getString("username", "") ?: ""
+    //region Add Hotline
+    private fun AddDataUsingNavbar(Type: Int) {
+        // Create the Dialog
+        val dialog = Dialog(this)
+        dialog.setContentView(R.layout.addhotline_or_barangayofficial)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val addofficialbtn: Button = dialog.findViewById(R.id.savedcreatdentails)
+        val OfficialName: EditText = dialog.findViewById(R.id.officialname)
+        val OfficialPosition: EditText = dialog.findViewById(R.id.officialposition)
+        OfficialImage = dialog.findViewById(R.id.officialimage)
+        OfficialPosition.hint = if(Type == 1) "Barangay Position" else "Hotline Number"
 
-        // Validate if the username is empty
+        OfficialImage.setOnClickListener{
+            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            imagePickerLauncher.launch(intent)
+        }
+
+        addofficialbtn.setOnClickListener {
+            val name = OfficialName.text.toString().trim()
+            val position = OfficialPosition.text.toString().trim() // Get official position
+            val imageUri = OfficialImage.tag.toString()
+  
+            if (name.isNotEmpty() && position.isNotEmpty()) {
+                saveOfficialorHotline(name, position, Type, imageUri) // Pass name and position
+                dialog.dismiss()
+            } else {
+                if (name.isEmpty()) {
+                    OfficialName.error = "Name cannot be empty"
+                }
+                if (position.isEmpty()) {
+                    OfficialPosition.error = "Position cannot be empty"
+                }
+            }
+        }
+
+        dialog.show()
+    }
+    //endregion
+
+
+    //region Save Official to Database
+    private fun saveOfficialorHotline(name: String, position: String, type: Int, imageUri: String) {
+        val database = FirebaseDatabase.getInstance().reference
+        val officialsRef = if (type == 1) database.child("BarangayOfficials").push() else database.child("Hotlines").push()
+        val officialData = mapOf(
+            "officialname" to name,
+            "officialposition" to position,
+            "officialImage" to imageUri
+        )
+
+        officialsRef.setValue(officialData)
+            .addOnSuccessListener {
+                // Data added successfully
+                Toast.makeText(this, "Data added successfully", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { exception ->
+                // Handle errors
+                Toast.makeText(this, "Error adding data: ${exception.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+    //endregion
+    //region Save the posted content to database
+    private fun savePostToFirebase(content: String, currentDate: String, postImage: ImageView, accountType: String) {
+        progressBar.visibility = VISIBLE
+        val username = sharedPreferences.getString("username", "") ?: ""
         if (username.isEmpty()) {
             showToast("Username is missing.")
             return
         }
 
-        // Get Firebase database reference for the Users node
         val databaseRef = FirebaseDatabase.getInstance().getReference("Users")
-        val timestamp = System.currentTimeMillis()
-
-        // Search for the user by username in the "Info" node
         databaseRef.orderByChild("Info/username").equalTo(username).addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     val userRandomKey = snapshot.children.first().key
 
                     if (userRandomKey != null) {
-                        // Generate the unique post key using push()
                         val postRef = databaseRef.child(userRandomKey).child("Post").push()
-                        val postKey = postRef.key // Save the post key
+                        val postKey = postRef.key
 
-                        // Create post data to save
-                        val postData = mapOf(
-                            "content" to content,
-                            "date" to currentDate,
-                            "timestamp" to ServerValue.TIMESTAMP,
-                            "postkey" to postKey.toString(),
-                            "keysecret" to userRandomKey.toString()
-                        )
+                        // Upload image to Supabase if selected
+                        val imageUri = postImage.tag as? Uri
+                        imageUri?.let {
+                            lifecycleScope.launch {
+                                try {
+                                    // Ensure progressBar is visible
+                                    progressBar.visibility = View.VISIBLE
 
-                        // Save the post data under the "Post" node for the specific user
-                        postRef.setValue(postData)
-                            .addOnSuccessListener {
-                                showToast("Post saved successfully!")
+                                    // Upload to Supabase storage
+                                    val fileName = getFileName(it) // Use your existing method to get the file name
+                                    val byteArray = contentResolver.openInputStream(it)?.readBytes() ?: throw Exception("File not found")
+                                    val uploadResult = bucket.upload(fileName, byteArray)
+
+                                    if (uploadResult.key != null) {
+                                        val imageUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co/storage/v1/object/public/images/$fileName"
+
+                                        // Create post data
+                                        val postData = mapOf(
+                                            "content" to content,
+                                            "date" to currentDate,
+                                            "timestamp" to ServerValue.TIMESTAMP,
+                                            "postkey" to postKey.toString(),
+                                            "keysecret" to userRandomKey.toString(),
+                                            "imageUrl" to imageUrl // Include the image URL in the post data
+                                        )
+
+                                        // Save the post data
+                                        postRef.setValue(postData)
+                                            .addOnSuccessListener {
+                                                // Show success message
+                                                showToast("Post saved successfully!")
+                                                progressBar.visibility = GONE
+                                            }
+                                            .addOnFailureListener { error ->
+                                                // Show error message
+                                                showToast("Error saving post: ${error.message}")
+                                                progressBar.visibility = GONE
+                                            }
+                                    }
+                                } catch (e: Exception) {
+                                    // Handle error
+                                    progressBar.visibility = GONE
+                                    showToast("Upload failed: ${e.message}")
+                                }
                             }
-                            .addOnFailureListener { error ->
-                                showToast("Error saving post: ${error.message}")
-                            }
-
-                    } else {
-                        showToast("User not found.")
+                        }
                     }
+                }
+
+                progressBar.visibility = GONE
+                if(accountType == "official"){
+                    NewsBtn.performClick()
                 } else {
-                    showToast("No user found with the username: $username")
+                    ComplainBtn.performClick()
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
+                // Show error message when data retrieval fails
                 showToast("Error retrieving user data: ${error.message}")
             }
         })
-
-        NewsBtn.performClick()
+    }
+    //endregion
+    //region Get Image File Name
+    private fun getFileName(uri: Uri): String {
+        var fileName = ""
+        val cursor = contentResolver.query(uri, null, null, null, null)
+        cursor?.let {
+            it.moveToFirst()
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            fileName = it.getString(nameIndex)
+            cursor.close()
+        }
+        if (fileName.isEmpty()) {
+            fileName = "unknownfile.${getFileExtension(uri)}"
+        }
+        return fileName
+    }
+    //endregion
+    //region Get Image File Extension
+    private fun getFileExtension(uri: Uri): String {
+        val mimeType = contentResolver.getType(uri)
+        return when (mimeType) {
+            "image/png" -> "png"
+            "image/jpeg" -> "jpg"
+            else -> "jpg"
+        }
     }
     //endregion
     //region Show a message after completing the post

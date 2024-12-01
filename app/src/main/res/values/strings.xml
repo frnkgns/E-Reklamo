@@ -1,9 +1,11 @@
 <resources>
     <string name="app_name">E-Reklamo</string>
     <string name="cloudinary_url">cloudinary://182441276883736:fMxgHBBm9r_uNG4ppWSiXhKSv68@e-reklamo-api</string>
+
     <style name="Textsize10">
         <item name="android:textColor">#1E1E1E</item>
     </style>
+
     <style name="Textsize8">
         <item name="android:textSize">14sp</item>
         <item name="android:textColor">#1E1E1E</item>
