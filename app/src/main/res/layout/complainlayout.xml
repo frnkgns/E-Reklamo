@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -26,7 +27,7 @@
                 android:layout_margin="20dp"
                 android:gravity="center_vertical"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/deletepost"
+                app:layout_constraintEnd_toStartOf="@+id/viewbtn"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
@@ -61,56 +62,77 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/deletepost"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/viewbtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Delete"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                android:layout_marginEnd="20dp"
-                android:textStyle="bold"
-                android:textColor="#FF0000" />
-
+                android:layout_marginEnd="20dp">
+                <TextView
+                    android:id="@+id/readcontentbtn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="20dp"
+                    android:textStyle="bold"
+                    android:background="@drawable/round_keyboard_arrow_down_24"
+                    android:textColor="#FF0000"
+                    tools:ignore="MissingConstraints" />
+                <ImageView
+                    android:id="@+id/viewcontentindicator"
+                    android:layout_width="10dp"
+                    android:visibility="gone"
+                    android:layout_height="10dp"
+                    android:src="@drawable/baseline_circle_241"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:ignore="MissingConstraints" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
         <!--endregion-->
-        <com.google.android.material.imageview.ShapeableImageView
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#737373"/>
         <LinearLayout
+            android:visibility="gone"
+            android:id="@+id/Contents"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
             android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/postdate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="12/12/2024"
-                android:textColor="@color/black"
-                android:layout_marginBottom="5dp"/>
-
-            <TextView
-                android:id="@+id/postcontent"
+            <com.google.android.material.imageview.ShapeableImageView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:text="Violets are blue, roses are red the plane is too low"/>
+                android:layout_height="1dp"
+                android:background="#737373"/>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="20dp">
-                <ImageView
-                    android:id="@+id/postImage"
+                android:layout_margin="20dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/postdate"
                     android:layout_width="wrap_content"
-                    android:layout_height="200dp"
-                    android:src="@drawable/sampleimg"
-                    />
+                    android:layout_height="wrap_content"
+                    android:text="12/12/2024"
+                    android:textColor="@color/black"
+                    android:layout_marginBottom="5dp"/>
+
+                <TextView
+                    android:id="@+id/postcontent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/black"
+                    android:text="Violets are blue, roses are red the plane is too low"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="20dp">
+                    <ImageView
+                        android:id="@+id/postImage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="200dp"
+                        android:src="@drawable/sampleimg"
+                        />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

@@ -25,7 +25,6 @@ import kotlinx.coroutines.launch
 
 class ActivityRegistration : AppCompatActivity() {
 
-    private lateinit var uploadButton: Button
     private lateinit var uploadedPhoto: ImageView
     private lateinit var progressBar: ProgressBar
 
@@ -47,9 +46,14 @@ class ActivityRegistration : AppCompatActivity() {
             val data: Intent? = result.data
             selectedImageUri = data?.data
             selectedImageUri?.let { uri ->
+                Glide.with(this)
+                    .load(uri)
+                    .circleCrop()
+                    .into(uploadedPhoto)
                 val inputStream = contentResolver.openInputStream(uri)
                 val bitmap = BitmapFactory.decodeStream(inputStream)
                 uploadedPhoto.setImageBitmap(bitmap) // Display the selected image in ImageView
+                uploadedPhoto.setPadding(0,0,0,0)
             }
         }
     }
@@ -60,7 +64,6 @@ class ActivityRegistration : AppCompatActivity() {
         setContentView(R.layout.activity_registration)
 
         uploadedPhoto = findViewById(R.id.uploadedPhoto)
-        uploadButton = findViewById(R.id.uploadButton)
         progressBar = findViewById(R.id.progressBar)
 
         val username = findViewById<EditText>(R.id.regusename)
@@ -79,7 +82,7 @@ class ActivityRegistration : AppCompatActivity() {
         val p0sition = if (accountType == "admin") position.text.toString() else "citizen"
 
         // Set up the image picker when the upload button is clicked
-        uploadButton.setOnClickListener {
+        uploadedPhoto.setOnClickListener {
             openImagePicker()
         }
 
@@ -90,10 +93,6 @@ class ActivityRegistration : AppCompatActivity() {
 
             // Handle image upload to Supabase
             selectedImageUri?.let { uri ->
-                Glide.with(this)
-                    .load(uri)
-                    .circleCrop()
-                    .into(uploadedPhoto)
                 lifecycleScope.launch {
                     try {
                         progressBar.visibility = View.VISIBLE

@@ -21,7 +21,7 @@ import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PostAdapter(private val posts: List<Map<String, Any>>,private val accounttype: String) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
+class PostGetAdapter(private val posts: List<Map<String, Any>>, private val accounttype: String) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
@@ -107,7 +107,6 @@ class PostAdapter(private val posts: List<Map<String, Any>>,private val accountt
         Glide.with(context)
             .load(imageUrl)
             .into(dialogImageView)
-
         dialog.show()
     }
 
@@ -137,6 +136,10 @@ class PostAdapter(private val posts: List<Map<String, Any>>,private val accountt
                 Toast.makeText(context, "Error deleting post: ${error.message}", Toast.LENGTH_SHORT).show()
             }
 
-        notifyDataSetChanged()
+        val index = posts.indexOfFirst { it["postkey"] == postKey }
+        if (index != -1) {
+            (posts as MutableList).removeAt(index)
+            notifyItemRemoved(index)
+        }
     }
 }
