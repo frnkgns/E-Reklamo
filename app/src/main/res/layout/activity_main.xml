@@ -71,6 +71,18 @@
             android:textColor="#1E1E1E"
             android:textStyle="bold"
             android:textAlignment="center" />
+        <TextView
+            android:id="@+id/resetbutton"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/creambtn"
+            android:padding="10dp"
+            android:text="RESET"
+            android:textColor="#1E1E1E"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:textAlignment="center" />
         <!-- Sign-Up Link -->
         <LinearLayout
             android:layout_width="match_parent"

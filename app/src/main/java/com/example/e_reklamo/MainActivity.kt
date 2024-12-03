@@ -5,7 +5,10 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
+import android.view.LayoutInflater
 import android.view.View
+import android.view.View.*
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.Button
@@ -15,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlin.random.Random
@@ -28,7 +32,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var auth: FirebaseAuth
 
-    @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n", "MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -41,6 +45,7 @@ class MainActivity : AppCompatActivity() {
         usernameInput = findViewById(R.id.usernameInput)
         passwordInput = findViewById(R.id.passwordInput)
         val loginButton = findViewById<TextView>(R.id.loginbutton)
+        val resetButton = findViewById<TextView>(R.id.resetbutton)
         val signup = findViewById<TextView>(R.id.signupLink)
         val forgotpassword = findViewById<TextView>(R.id.forgotPassword)
         progressbar = findViewById(R.id.progressBar)
@@ -65,24 +70,63 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-//        forgotpassword.setOnClickListener {
-//            val username = usernameInput.text.toString().trim()
-//            if (username.isEmpty()) {
-//                Toast.makeText(this, "Please enter your username", Toast.LENGTH_SHORT).show()
-//            } else {
-//                val randomDigits = generateRandomDigits(6)
-//                getEmailFromUsername(randomDigits, username)
-//            }
-//        }
+        resetButton.setOnClickListener {
+            var isAccountFound = false
+            val CheckDatabase = FirebaseDatabase.getInstance().getReference("Users")
+            CheckDatabase.addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (randomKey in snapshot.children) {
+                        val email = randomKey.child("Info/email").value.toString()
+                        val username = randomKey.child("Info/username").value.toString()
+                        val emailInput = passwordInput.text.toString()
+                        val usernameInput = usernameInput.text.toString()
+
+                        if (emailInput.isNotEmpty() && usernameInput.isNotEmpty()) {
+                            if (email == emailInput && username == usernameInput) {
+                                val userKey = randomKey.key.toString()
+                                ShowDialogueInput(userKey, passwordInput)
+                                resetButton.visibility = GONE
+                                loginButton.visibility = VISIBLE
+                                isAccountFound = true
+                                break
+                            }
+                        } else {
+                            if (emailInput.isEmpty()) {
+                                passwordInput.error = "Please enter your email"
+                            }
+                            if (usernameInput.isEmpty()) {
+                                passwordInput.error = "Please enter your username"
+                            }
+                        }
+                    }
+
+                    if(!isAccountFound){
+                        Toast.makeText(this@MainActivity, "Incorrect username or email", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    //Handle error
+                }
+            })
+        }
+        forgotpassword.setOnClickListener {
+            passwordInput.setText("")
+            passwordInput.setHint("Enter your email here")
+            passwordInput.inputType= InputType.TYPE_CLASS_TEXT
+            loginButton.visibility = GONE
+            resetButton.visibility = VISIBLE
+        }
     }
 
+    //region Log in Handliong
     private fun handleLogin(username: String, password: String) {
-        progressbar.visibility = View.VISIBLE
+        progressbar.visibility = VISIBLE
 
         // Fetch all users
         database.child("Users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                progressbar.visibility = View.GONE
+                progressbar.visibility = GONE
 
                 if (snapshot.exists()) {
                     var userFound = false
@@ -105,7 +149,7 @@ class MainActivity : AppCompatActivity() {
                                     mapOf(
                                         "username" to usernameInDb,
                                         "password" to passwordInDb,
-                                        "userKey" to userSnapshot.key,
+                                        "userKey" to userSnapshot.key.toString(),
                                         "name" to userSnapshot.child("Info/name").value?.toString(),
                                         "age" to userSnapshot.child("Info/age").value?.toString(),
                                         "contact" to userSnapshot.child("Info/contact").value?.toString(),
@@ -145,12 +189,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                progressbar.visibility = View.GONE
+                progressbar.visibility = GONE
                 Toast.makeText(this@MainActivity, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         })
     }
-
+    //endregion
     //region Got To User Dashboard
     private fun showUserDashboard() {
         val intent = Intent(this@MainActivity, UserDashboardActivity::class.java)
@@ -176,7 +220,39 @@ class MainActivity : AppCompatActivity() {
         builder.create().show()
     }
     //endregion
+    fun ShowDialogueInput(userkey: String, passwordInput: EditText){
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.resetpassword, null) // Inflate your layout
+        val newPasswordEditText = dialogView.findViewById<EditText>(R.id.newPassword)
+        val confirmPasswordEditText = dialogView.findViewById<EditText>(R.id.confirmPassword)
+        val savePasswordButton = dialogView.findViewById<TextView>(R.id.savePasswordButton)
 
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        savePasswordButton.setOnClickListener {
+            val newPassword = newPasswordEditText.text.toString()
+            val confirmPassword = confirmPasswordEditText.text.toString()
+
+            if(newPassword == confirmPassword){
+                val SavedPass = FirebaseDatabase.getInstance().getReference("Users")
+                SavedPass.child("$userkey/Info/password").setValue(confirmPassword)
+                passwordInput.inputType= InputType.TYPE_CLASS_TEXT
+
+
+                Toast.makeText(this, "Password Reset Complete", Toast.LENGTH_SHORT).show()
+
+                passwordInput.setText("")
+                passwordInput.setHint("Password")
+                dialog.dismiss()
+
+            } else {
+                Toast.makeText(this, "Password does not match", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
+    }
     //region Full Screen
     private fun makeFullscreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

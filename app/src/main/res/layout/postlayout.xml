@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     app:cardUseCompatPadding="true"
     app:cardCornerRadius="10dp"
     android:layout_marginStart="10dp"
@@ -112,6 +113,13 @@
                     android:src="@drawable/sampleimg"
                     />
             </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/viewerRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:listitem="@layout/view_profile_layout"
+                tools:itemCount="1"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

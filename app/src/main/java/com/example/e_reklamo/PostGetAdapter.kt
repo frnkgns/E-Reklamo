@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.database.FirebaseDatabase
@@ -74,13 +75,12 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val acco
 //        holder.deletePost.visibility = if(accounttype == "admin") { View.VISIBLE } else { View.GONE }
         holder.deletePost.setOnClickListener {
             deletePost(post["postkey"].toString(), holder.itemView.context, post["keysecret"].toString(), post["imageUrl"].toString())
-            //delete on my supbase using the post[imageUrl]
         }
     }
 
     override fun getItemCount(): Int = posts.size
 
-    // The getTimeAgo function that formats the timestamp to relative time or date
+    //region The getTimeAgo function that formats the timestamp to relative time or date
     private fun getTimeAgo(timestamp: Long): String {
         val now = System.currentTimeMillis()
         val diffInMillis = now - timestamp
@@ -99,6 +99,7 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val acco
         // For posts within the last 7 days, show relative time like "1 minute ago"
         return DateUtils.getRelativeTimeSpanString(timestamp, now, DateUtils.MINUTE_IN_MILLIS).toString()
     }
+    //endregion
     private fun showImageDialog(context: Context, imageUrl: String) {
         val dialog = Dialog(context)
         dialog.setContentView(R.layout.view_post_image) // Inflate your dialog layout
@@ -109,7 +110,7 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val acco
             .into(dialogImageView)
         dialog.show()
     }
-
+    //region Delete Post Function
     private fun deletePost(postKey: String, context: Context, userId: String, imageUrl: String) {
         val database = FirebaseDatabase.getInstance().getReference("Users/$userId/Post/$postKey")
         Log.d("ytr", "$database")
@@ -142,4 +143,5 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val acco
             notifyItemRemoved(index)
         }
     }
+    //endregion
 }

@@ -79,7 +79,6 @@ class ActivityRegistration : AppCompatActivity() {
         val sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE)
         val accountType = intent.getStringExtra("accounttype").toString()
         position.visibility = if (accountType == "admin") View.VISIBLE else View.GONE
-        val p0sition = if (accountType == "admin") position.text.toString() else "citizen"
 
         // Set up the image picker when the upload button is clicked
         uploadedPhoto.setOnClickListener {
@@ -90,6 +89,7 @@ class ActivityRegistration : AppCompatActivity() {
             val accountType = if (intent.getStringExtra("accounttype") == "admin") "official" else "user"
             val usernameText = username.text.toString()
             val emailText = email.text.toString()
+            val p0sition = if (intent.getStringExtra("accounttype") == "admin") position.text.toString() else "citizen"
 
             // Handle image upload to Supabase
             selectedImageUri?.let { uri ->
@@ -126,12 +126,15 @@ class ActivityRegistration : AppCompatActivity() {
                                 "accounttype" to accountType,
                                 "profileImage" to imageUrl // Save image URL from Supabase
                             )
-                            val editor = sharedPreferences.edit()
-                            for (key in userInfo.keys) {
-                                editor.putString(key, userInfo[key])
-                            }
 
-                            editor.apply()
+                            if(accountType == "user"){
+                                val editor = sharedPreferences.edit()
+                                for (key in userInfo.keys) {
+                                    editor.putString(key, userInfo[key])
+                                }
+
+                                editor.apply()
+                            }
 
                             val database = FirebaseDatabase.getInstance().reference
                             val randomKey = database.child("Users").push().key

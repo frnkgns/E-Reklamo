@@ -47,7 +47,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
 class UserDashboardActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
 
@@ -158,7 +157,12 @@ class UserDashboardActivity : AppCompatActivity() {
             NewUnderLine.visibility = INVISIBLE
             ComplainUnderLine.visibility = VISIBLE
         }
-        NewsBtn.performClick()
+        if (accounttype != "user"){
+            NewsBtn.performClick()
+            getAllPostFromFirebase("user", profilUri, name, userKey, "check")
+        } else {
+            NewsBtn.performClick()
+        }
 
         nametxt.text = name
         positiontxt.text = position
@@ -362,7 +366,6 @@ class UserDashboardActivity : AppCompatActivity() {
                         postsList.sortByDescending { it["timestamp"] as Long }
                         val adapter = PostGetAdapter(postsList, "user")
                         recycleriew.adapter = adapter
-
                     }
                 }
 
