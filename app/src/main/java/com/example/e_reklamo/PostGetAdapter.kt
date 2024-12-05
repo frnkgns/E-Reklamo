@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
@@ -21,7 +22,8 @@ import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PostGetAdapter(private val posts: List<Map<String, Any>>) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
+class PostGetAdapter(private val posts: List<Map<String, Any>>, private val userKey: String,
+                     private val Progreessbar: ProgressBar) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
@@ -74,8 +76,9 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>) : RecyclerView.A
         val timeAgo = getTimeAgo(timestamp)
         // Set the time in the postDate TextView
         holder.postDate.text = timeAgo
+        val PostAccountTyper = post["keysecret"] as String
 
-//        holder.deletePost.visibility = if(accounttype == "admin") { View.VISIBLE } else { View.GONE }
+        holder.deletePost.visibility = if(userKey == PostAccountTyper) View.VISIBLE else View.GONE
         holder.deletePost.setOnClickListener {
             deletePost(post["postkey"].toString(), holder.itemView.context, post["keysecret"].toString(), post["imageUrl"].toString())
         }
@@ -115,6 +118,7 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>) : RecyclerView.A
     }
     //region Delete Post Function
     private fun deletePost(postKey: String, context: Context, userId: String, imageUrl: String) {
+        Progreessbar.visibility = View.VISIBLE
         val database = FirebaseDatabase.getInstance().getReference("Users/$userId/Post/$postKey")
         Log.d("ytr", "$database")
 
@@ -135,6 +139,7 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>) : RecyclerView.A
                         }
                     }
                 }
+                Progreessbar.visibility = View.GONE
             }
             .addOnFailureListener { error ->
                 Toast.makeText(context, "Error deleting post: ${error.message}", Toast.LENGTH_SHORT).show()

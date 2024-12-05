@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
@@ -28,7 +29,7 @@ import java.util.*
 
 class ComplainGetAdapter(private val posts: List<Map<String, Any>>,
                          private val Image: String, private val name: String,
-                         private val key: String, private val newcompaintBtn: TextView) : RecyclerView.Adapter<ComplainGetAdapter.PostViewHolder>() {
+                         private val key: String, private val newcompaintBtn: TextView, ) : RecyclerView.Adapter<ComplainGetAdapter.PostViewHolder>() {
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",

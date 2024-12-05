@@ -150,7 +150,7 @@ class UserDashboardActivity : AppCompatActivity() {
         AddOfficial.setOnClickListener { AddDataUsingNavbar(1) }
         AddHotline.setOnClickListener { AddDataUsingNavbar(2) }
         NewsBtn.setOnClickListener {
-            getAllPostFromFirebase("official", "", "", "", "")
+            getAllPostFromFirebase("official", "", "", userKey,"")
             NewsBtn.setTextColor(android.graphics.Color.WHITE)
             ComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             NewUnderLine.visibility = VISIBLE
@@ -274,9 +274,9 @@ class UserDashboardActivity : AppCompatActivity() {
         database.child("Users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (userSnapshot in snapshot.children) {
-                    val userAccountType = userSnapshot.child("Info").child("accounttype").getValue(String::class.java)
+                    val posterAccountType = userSnapshot.child("Info").child("accounttype").getValue(String::class.java)
 
-                    if (userAccountType == accountType) {
+                    if (posterAccountType == accountType) {
                         val name = userSnapshot.child("Info").child("name").getValue(String::class.java).orEmpty()
                         val position = userSnapshot.child("Info").child("position").getValue(String::class.java).orEmpty()
                         val profileUri = userSnapshot.child("Info").child("profileImage").getValue(String::class.java).orEmpty()
@@ -301,6 +301,7 @@ class UserDashboardActivity : AppCompatActivity() {
                                 "timestamp" to timestamp,
                                 "imageUrl" to ImageUrl,
                                 "profileImage" to profileUri,
+                                "posteraccountType" to posterAccountType,
                             )
                             if(Purpose == "check"){
                                 temppostsList.add(postMap)
@@ -323,7 +324,7 @@ class UserDashboardActivity : AppCompatActivity() {
                         val adapter = ComplainGetAdapter(postsList, Image, name, key, ComplainBtn)
                         recycleriew.adapter = adapter
                     } else if(accountType == "official"){
-                        val adapter = PostGetAdapter(postsList)
+                        val adapter = PostGetAdapter(postsList, key, progressBar)
                         recycleriew.adapter = adapter
                     }
                 }
@@ -373,7 +374,7 @@ class UserDashboardActivity : AppCompatActivity() {
 
                         // Sort posts by timestamp in descending order (latest posts first)
                         postsList.sortByDescending { it["timestamp"] as Long }
-                        val adapter = PostGetAdapter(postsList)
+                        val adapter = PostGetAdapter(postsList, "user", progressBar)
                         recycleriew.adapter = adapter
                     }
                 }
