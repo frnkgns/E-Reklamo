@@ -85,6 +85,10 @@ class ComplainGetAdapter(private val posts: List<Map<String, Any>>,
             .load(post["imageUrl"] as String)
             .fitCenter()
             .into(holder.postImageView)
+        val imageurl = post["imageUrl"] as String
+        if(imageurl.isEmpty()){
+            holder.postImageView.visibility = View.GONE
+        }
         holder.postImageView.setOnClickListener { showImageDialog(holder.itemView.context, post["imageUrl"] as String) }
         Glide.with(holder.itemView.context)
             .load(post["profileImage"] as String)

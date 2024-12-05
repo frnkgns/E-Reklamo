@@ -18,6 +18,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
@@ -38,7 +39,6 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.values
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
@@ -72,6 +72,11 @@ class UserDashboardActivity : AppCompatActivity() {
     private lateinit var ProfilePic: ImageView
     private lateinit var postImage: ImageView
     private lateinit var OfficialImage: ImageView
+
+    private lateinit var purpose: String
+    private lateinit var AddOfficial: Button
+    private lateinit var AddHotline: Button
+    private lateinit var AddBtnsLayout: LinearLayout
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
@@ -139,8 +144,13 @@ class UserDashboardActivity : AppCompatActivity() {
         ComplainBtn = findViewById(R.id.complainbtn)
         ComplainUnderLine = findViewById(R.id.complainsunderline)
         //endregion
+        AddOfficial = findViewById(R.id.addofficialbtn)
+        AddHotline = findViewById(R.id.addhotlinebtn)
+        AddBtnsLayout = findViewById(R.id.otherBtnLayout)
+        AddOfficial.setOnClickListener { AddDataUsingNavbar(1) }
+        AddHotline.setOnClickListener { AddDataUsingNavbar(2) }
         NewsBtn.setOnClickListener {
-            getAllPostFromFirebase("official", "", "", "", "official")
+            getAllPostFromFirebase("official", "", "", "", "")
             NewsBtn.setTextColor(android.graphics.Color.WHITE)
             ComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             NewUnderLine.visibility = VISIBLE
@@ -182,29 +192,24 @@ class UserDashboardActivity : AppCompatActivity() {
         line.visibility = if (accounttype == "admin") { GONE } else { VISIBLE }
         //endregion
 
-        var navBtnClicked = 0
+        purpose = ""
         postContent = findViewById(R.id.post)
+        postContent.visibility = if(accounttype == "admin") GONE else VISIBLE
         postContent.setOnClickListener {
-            if(accounttype == "admin"){
-                if(navBtnClicked == 1){
-                    AddDataUsingNavbar(1)
-                } else if(navBtnClicked == 2){
-                    AddDataUsingNavbar(2)
-                }
-            } else {
-                showPostDialog(accounttype)
-            }
+            showPostDialog(accounttype, userKey)
         }
 
         findViewById<TextView>(R.id.nav_home).setOnClickListener {
-            navBtnClicked = 0
+            AddBtnsLayout.visibility = GONE
             NewsBtn.visibility = VISIBLE
             ComplainBtn.visibility = VISIBLE
             NewsBtn.performClick()
             drawerLayout.closeDrawer(GravityCompat.START)
         }
         findViewById<TextView>(R.id.nav_officials).setOnClickListener {
-            navBtnClicked = 1
+            AddBtnsLayout.visibility = VISIBLE
+            AddOfficial.visibility = VISIBLE
+            AddHotline.visibility = GONE
             NewsBtn.visibility = GONE
             ComplainBtn.visibility = GONE
             NewUnderLine.visibility = GONE
@@ -213,7 +218,9 @@ class UserDashboardActivity : AppCompatActivity() {
             drawerLayout.closeDrawer(GravityCompat.START)
         }
         findViewById<TextView>(R.id.nav_hotlines).setOnClickListener {
-            navBtnClicked = 2
+            AddBtnsLayout.visibility = VISIBLE
+            AddOfficial.visibility = GONE
+            AddHotline.visibility = VISIBLE
             NewsBtn.visibility = GONE
             NewUnderLine.visibility = GONE
             ComplainUnderLine.visibility = GONE
@@ -239,19 +246,16 @@ class UserDashboardActivity : AppCompatActivity() {
         //region Image Picker Using File Manager
         imagePickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                if(navBtnClicked == 0){
-
-                }
                 val data: Intent? = result.data
                 val selectedImageUri = data?.data
                 selectedImageUri?.let { uri ->
                     // Show selected image in the ImageView
-                    if(navBtnClicked == 0){
+                    if(purpose == "postContent"){
                         Glide.with(this).load(uri).circleCrop().into(postImage)
                         postImage.setPadding(0,0,0,0)
                         postImage.tag = uri // Use tag to store the URI
 
-                    } else if(navBtnClicked == 1 || navBtnClicked == 2){
+                    } else {
                         Glide.with(this).load(uri).circleCrop().into(OfficialImage)
                         OfficialImage.setPadding(0,0,0,0)
                         OfficialImage.tag = uri // Use tag to store the URI
@@ -315,8 +319,13 @@ class UserDashboardActivity : AppCompatActivity() {
                     temprecycler.adapter = adapter
                 } else {
                     postsList.sortByDescending { it["timestamp"] as Long }
-                    val adapter = ComplainGetAdapter(postsList, Image, name, key, ComplainBtn)
-                    recycleriew.adapter = adapter
+                    if(accountType == "user"){
+                        val adapter = ComplainGetAdapter(postsList, Image, name, key, ComplainBtn)
+                        recycleriew.adapter = adapter
+                    } else if(accountType == "official"){
+                        val adapter = PostGetAdapter(postsList)
+                        recycleriew.adapter = adapter
+                    }
                 }
             }
 
@@ -364,7 +373,7 @@ class UserDashboardActivity : AppCompatActivity() {
 
                         // Sort posts by timestamp in descending order (latest posts first)
                         postsList.sortByDescending { it["timestamp"] as Long }
-                        val adapter = PostGetAdapter(postsList, "user")
+                        val adapter = PostGetAdapter(postsList)
                         recycleriew.adapter = adapter
                     }
                 }
@@ -414,8 +423,7 @@ class UserDashboardActivity : AppCompatActivity() {
     }
     //endregion
     //region Post Dialog
-    private fun showPostDialog(accountType: String) {
-        // Create the Dialog
+    private fun showPostDialog(accountType: String, key: String) {
         val dialog = Dialog(this)
         dialog.setContentView(R.layout.postcontent)
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -429,16 +437,16 @@ class UserDashboardActivity : AppCompatActivity() {
 
         postImage = dialog.findViewById(R.id.postImageView)
         postImage.setOnClickListener{
+            purpose = "postContent"
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             imagePickerLauncher.launch(intent)
         }
 
         postBtn.setOnClickListener {
             val content = contentEdit.text.toString().trim()
-
             if (content.isNotEmpty()) {
-                savePostToFirebase(content, currentDate, postImage, accountType)
-                dialog.dismiss() // Close the dialog after saving
+                savePostToFirebase(content, currentDate, postImage, key, accountType)
+                dialog.dismiss()
             } else {
                 contentEdit.error = "Content cannot be empty"
             }
@@ -461,6 +469,7 @@ class UserDashboardActivity : AppCompatActivity() {
         OfficialPosition.inputType = if(Type == 1) { InputType.TYPE_CLASS_TEXT } else { InputType.TYPE_CLASS_NUMBER}
 
         OfficialImage.setOnClickListener{
+            purpose = "OfficialImage"
             val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             imagePickerLauncher.launch(intent)
         }
@@ -533,91 +542,102 @@ class UserDashboardActivity : AppCompatActivity() {
     }
     //endregion
     //region Save the posted content to database
-    private fun savePostToFirebase(content: String, currentDate: String, postImage: ImageView, accountType: String) {
+    private fun savePostToFirebase(content: String, currentDate: String, postImage: ImageView, userKey: String, AccountType: String) {
         progressBar.visibility = VISIBLE
-        val username = sharedPreferences.getString("username", "") ?: ""
-        if (username.isEmpty()) {
-            showToast("Username is missing.")
-            return
-        }
-
-        val databaseRef = FirebaseDatabase.getInstance().getReference("Users")
-        databaseRef.orderByChild("Info/username").equalTo(username).addListenerForSingleValueEvent(object : ValueEventListener {
+        val databaseRef = FirebaseDatabase.getInstance().getReference("Users/$userKey")
+        databaseRef.addListenerForSingleValueEvent(object : ValueEventListener{
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()) {
-                    val userRandomKey = snapshot.children.first().key
+                if (userKey != null) {
+                    val postRef = databaseRef.child("Post").push()
+                    val postKey = postRef.key
 
-                    if (userRandomKey != null) {
-                        val postRef = databaseRef.child(userRandomKey).child("Post").push()
-                        val postKey = postRef.key
+                    // Upload image to Supabase if selected
+                    val imageUri = postImage.tag as? Uri
+                    if(imageUri == null){
+                        // Create post data
+                        val postData = mapOf(
+                            "content" to content,
+                            "date" to currentDate,
+                            "timestamp" to ServerValue.TIMESTAMP,
+                            "postkey" to postKey.toString(),
+                            "keysecret" to userKey
+                        )
 
-                        // Upload image to Supabase if selected
-                        val imageUri = postImage.tag as? Uri
-                        //region Upload Image to Supabase and Details to Firebase
-                        imageUri?.let {
-                            lifecycleScope.launch {
-                                try {
-                                    // Ensure progressBar is visible
-                                    progressBar.visibility = View.VISIBLE
-
-                                    // Upload to Supabase storage
-                                    val fileName = getFileName(it) // Use your existing method to get the file name
-                                    val byteArray = contentResolver.openInputStream(it)?.readBytes() ?: throw Exception("File not found")
-                                    val uploadResult = bucket.upload(fileName, byteArray)
-
-                                    if (uploadResult.key != null) {
-                                        val imageUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co/storage/v1/object/public/images/$fileName"
-
-                                        // Create post data
-                                        val postData = mapOf(
-                                            "content" to content,
-                                            "date" to currentDate,
-                                            "timestamp" to ServerValue.TIMESTAMP,
-                                            "postkey" to postKey.toString(),
-                                            "keysecret" to userRandomKey.toString(),
-                                            "imageUrl" to imageUrl // Include the image URL in the post data
-                                        )
-
-                                        // Save the post data
-                                        postRef.setValue(postData)
-                                            .addOnSuccessListener {
-                                                // Show success message
-                                                showToast("Post saved successfully!")
-                                                progressBar.visibility = GONE
-                                            }
-                                            .addOnFailureListener { error ->
-                                                // Show error message
-                                                showToast("Error saving post: ${error.message}")
-                                                progressBar.visibility = GONE
-                                            }
-                                    }
-                                } catch (e: Exception) {
-                                    // Handle error
-                                    progressBar.visibility = GONE
-                                    showToast("Upload failed: ${e.message}")
+                        // Save the post data
+                        postRef.setValue(postData)
+                            .addOnSuccessListener {
+                                // Show success message
+                                showToast("Post saved successfully!")
+                                progressBar.visibility = GONE
+                                if(AccountType == "user"){
+                                    ComplainBtn.performClick()
+                                } else {
+                                    NewsBtn.performClick()
                                 }
                             }
-                        }
-                        //endregion
+                            .addOnFailureListener { error ->
+                                // Show error message
+                                showToast("Error saving post: ${error.message}")
+                                progressBar.visibility = GONE
+                            }
                     }
-                }
+                    imageUri?.let {
+                        lifecycleScope.launch {
+                            try {
 
+                                // Upload to Supabase storage
+                                val fileName = getFileName(it) // Use your existing method to get the file name
+                                val byteArray = contentResolver.openInputStream(it)?.readBytes() ?: throw Exception("File not found")
+                                val uploadResult = bucket.upload(fileName, byteArray)
+
+                                if (uploadResult.key != null) {
+                                    val imageUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co/storage/v1/object/public/images/$fileName"
+
+                                    // Create post data
+                                    val postData = mapOf(
+                                        "content" to content,
+                                        "date" to currentDate,
+                                        "timestamp" to ServerValue.TIMESTAMP,
+                                        "postkey" to postKey.toString(),
+                                        "keysecret" to userKey.toString(),
+                                        "imageUrl" to imageUrl // Include the image URL in the post data
+                                    )
+
+                                    // Save the post data
+                                    postRef.setValue(postData)
+                                        .addOnSuccessListener {
+                                            // Show success message
+                                            showToast("Post saved successfully!")
+                                            progressBar.visibility = GONE
+                                            if(AccountType == "user"){
+                                                ComplainBtn.performClick()
+                                            } else {
+                                                NewsBtn.performClick()
+                                            }
+                                        }
+                                        .addOnFailureListener { error ->
+                                            // Show error message
+                                            showToast("Error saving post: ${error.message}")
+                                            progressBar.visibility = GONE
+                                        }
+                                }
+                            } catch (e: Exception) {
+                                // Handle error
+                                progressBar.visibility = GONE
+                                showToast("Upload failed: ${e.message}")
+                            }
+                        }
+                    }
+                    //endregion
+                }
                 progressBar.visibility = GONE
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Show error message when data retrieval fails
                 showToast("Error retrieving user data: ${error.message}")
             }
         })
-
-        if(accountType == "official"){
-            NewsBtn.performClick()
-        } else {
-            ComplainBtn.performClick()
-        }
-    }
-    //endregion
+    }    //endregion
     //region Get Image File Name
     private fun getFileName(uri: Uri): String {
         var fileName = ""

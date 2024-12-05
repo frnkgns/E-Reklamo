@@ -80,63 +80,95 @@
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/selectpostoption"
+                android:id="@+id/otherBtnLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingTop="10dp"
-                app:layout_constraintTop_toBottomOf="@id/layout1">
-
-                <LinearLayout
+                android:padding="10dp"
+                android:visibility="gone"
+                android:gravity="center">
+                <Button
+                    android:id="@+id/addofficialbtn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="10dp">
-                    <TextView
-                        android:id="@+id/newsbtn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/white"
-                        android:textStyle="bold"
-                        android:text="NEWS" />
-                    <View
-                        android:id="@+id/newsunderline"
-                        android:layout_width="20dp"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="5dp"
-                        android:background="@color/white"
-                        android:padding="20dp" />
-                </LinearLayout>
-
-                <LinearLayout
+                    android:text="Add Barangay Officials"
+                    android:background="@drawable/creambtn"
+                    android:layout_marginEnd="20dp"
+                    android:textColor="@color/black"
+                    android:visibility="gone"
+                    />
+                <Button
+                    android:id="@+id/addhotlinebtn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center">
-                    <TextView
-                        android:id="@+id/complainbtn"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="#7393B3"
-                        android:text="COMPLAINS" />
-                    <View
-                        android:id="@+id/complainsunderline"
-                        android:layout_width="20dp"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="5dp"
-                        android:background="@color/white"
-                        android:padding="20dp"
-                        android:visibility="invisible"/>
-                </LinearLayout>
+                    android:text="Add Hotline"
+                    android:visibility="gone"
+                    android:textColor="@color/black"
+                    android:background="@drawable/creambtn"
+                    />
             </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerView"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:listitem="@layout/postlayout" />
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:id="@+id/selectpostoption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:paddingTop="10dp"
+                    app:layout_constraintTop_toBottomOf="@id/layout1">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="10dp">
+                        <TextView
+                            android:id="@+id/newsbtn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/white"
+                            android:textStyle="bold"
+                            android:text="NEWS" />
+                        <View
+                            android:id="@+id/newsunderline"
+                            android:layout_width="20dp"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="5dp"
+                            android:background="@color/white"
+                            android:padding="20dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="center">
+                        <TextView
+                            android:id="@+id/complainbtn"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="#7393B3"
+                            android:text="COMPLAINS" />
+                        <View
+                            android:id="@+id/complainsunderline"
+                            android:layout_width="20dp"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="5dp"
+                            android:background="@color/white"
+                            android:padding="20dp"
+                            android:visibility="invisible"/>
+                    </LinearLayout>
+                </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    tools:listitem="@layout/postlayout" />
+            </LinearLayout>
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/temprecyclver"
                 android:visibility="invisible"

@@ -124,7 +124,7 @@ class ActivityRegistration : AppCompatActivity() {
                                 "barangay" to barangay.text.toString(),
                                 "position" to p0sition,
                                 "accounttype" to accountType,
-                                "profileImage" to imageUrl // Save image URL from Supabase
+                                "profileImage" to imageUrl,
                             )
 
                             if(accountType == "user"){

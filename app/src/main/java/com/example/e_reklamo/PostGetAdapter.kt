@@ -10,7 +10,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.database.FirebaseDatabase
@@ -22,7 +21,7 @@ import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PostGetAdapter(private val posts: List<Map<String, Any>>, private val accounttype: String) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
+class PostGetAdapter(private val posts: List<Map<String, Any>>) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
@@ -57,6 +56,10 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val acco
             .load(post["imageUrl"] as String)
             .fitCenter()
             .into(holder.postImageView)
+        val imagerul = post["imageUrl"] as String
+        if(imagerul.isEmpty()){
+            holder.postImageView.visibility = View.GONE
+        }
         holder.postImageView.setOnClickListener {
             showImageDialog(holder.itemView.context, post["imageUrl"] as String)
         }
