@@ -36,7 +36,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginEnd="10dp"
-                    android:src="@drawable/oval" />
+                    android:src="@drawable/anonymous" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -48,7 +48,7 @@
                         android:id="@+id/accountname"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Mark John San Jose"
+                        android:text="User: b1786as"
                         android:textColor="#1E1E1E"
                         android:textStyle="bold" />
 
@@ -56,7 +56,7 @@
                         android:id="@+id/accountposition"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Kapitan"
+                        android:text="Citizen"
                         android:textColor="#1E1E1E"
                         android:textSize="10sp" />
                 </LinearLayout>
@@ -113,13 +113,32 @@
                     android:src="@drawable/sampleimg"
                     />
             </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/viewerRecyclerView"
-                android:layout_width="match_parent"
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/statuslayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="20dp"
+            android:layout_marginTop="-20dp"
+            android:layout_marginBottom="20dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/read"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:listitem="@layout/view_profile_layout"
-                tools:itemCount="1"/>
+                android:text="Sent"
+                android:textAlignment="center"
+                android:drawableRight="@drawable/round_check_circle_outline_24"
+                android:textColor="@color/black"
+                android:layout_marginEnd="20dp"
+                />
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:text="Status: Pending"
+                android:layout_gravity="end"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

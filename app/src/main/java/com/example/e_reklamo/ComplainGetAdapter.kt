@@ -1,42 +1,34 @@
 package com.example.e_reklamo
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.Context
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.*
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.ProgressBar
+import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import io.github.jan.supabase.createSupabaseClient
-import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
-class ComplainGetAdapter(private val posts: List<Map<String, Any>>,
-                         private val Image: String, private val name: String,
-                         private val key: String, private val newcompaintBtn: TextView, ) : RecyclerView.Adapter<ComplainGetAdapter.PostViewHolder>() {
-
-    private val supabase = createSupabaseClient(
-        supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
-        supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYWJxbWFvb2NxaXFqbGJqeW1pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI4NTQyODcsImV4cCI6MjA0ODQzMDI4N30.m0Mi4G4Henu9nt_E4P0TqJVKe_Q1S6ZhC7UkLRWpTsA"
-    ) {
-        install(Storage)
-    }
+class ComplainGetAdapter(
+    private val posts: List<Map<String, Any>>,
+    private val accountType: String,
+    private val newcompaintBtn: TextView
+) : RecyclerView.Adapter<ComplainGetAdapter.PostViewHolder>() {
 
     inner class PostViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val accountName: TextView = view.findViewById(R.id.accountname)
@@ -46,8 +38,9 @@ class ComplainGetAdapter(private val posts: List<Map<String, Any>>,
         val Readcontent: TextView = view.findViewById(R.id.readcontentbtn)
         val Readindicator: ImageView = view.findViewById(R.id.viewcontentindicator)
         val postImageView: ImageView = view.findViewById(R.id.postImage)
-        val postProfileImage: ImageView = view.findViewById(R.id.postprofile)
         val showcontent: LinearLayout = view.findViewById(R.id.Contents)
+        val StatusSpinner: Spinner = view.findViewById(R.id.complaintstatus)
+        val SpinnerLayout: LinearLayout = view.findViewById(R.id.spinnerLayout)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
@@ -55,93 +48,133 @@ class ComplainGetAdapter(private val posts: List<Map<String, Any>>,
         return PostViewHolder(view)
     }
 
+    @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
+        val postKey = post["postkey"] as? String ?: ""
+        val keySecret = post["keysecret"] as? String ?: ""
+        val imageUrl = post["imageUrl"] as? String ?: ""
 
-        val PostKey = post["postkey"] as String
-        val KeySecret = post["keysecret"] as String
+        holder.accountName.text = if (accountType == "user") {
+            "User${(keySecret).take(5)}"
+        } else {
+            post["name"] as? String ?: "Unknown"
+        }
 
-        val database = FirebaseDatabase.getInstance().getReference("Users/$KeySecret/Post")
-        val database2 = FirebaseDatabase.getInstance().getReference("Users/$KeySecret/Post/$PostKey/Read")
+        if (accountType == "user") {
+            holder.Readcontent.visibility = GONE
+            holder.SpinnerLayout.visibility = GONE
+            holder.showcontent.visibility = VISIBLE
+        }
+
+        val database2 = FirebaseDatabase.getInstance().getReference("Users/$keySecret/Post/$postKey/read")
+
+        // Handle read status
         database2.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val hasRead = snapshot.child(key).exists() // Check if user has read the post
-                holder.Readindicator.visibility = if (hasRead) View.GONE else View.VISIBLE
-                if (!hasRead) {
+                val hasRead = snapshot.getValue(String::class.java) ?: ""
+                holder.Readindicator.visibility = if (hasRead == "yes") GONE else VISIBLE
+                if (hasRead == "yes") {
+                    newcompaintBtn.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0) // This removes the drawable
+                } else {
                     newcompaintBtn.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.baseline_circle_241, 0)
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("FirebaseError", "Error reading data: ${error.message}") // Log the error
-                // Optionally display an error message to the user
+                Log.e("FirebaseError", "Error reading data: ${error.message}")
             }
         })
 
-        // Extract and bind the data to the views
-        holder.accountName.text = post["name"] as String
-        holder.accountPosition.text = post["position"] as String
-        holder.postContent.text = post["content"] as String
-        Glide.with(holder.itemView.context)
-            .load(post["imageUrl"] as String)
-            .fitCenter()
-            .into(holder.postImageView)
-        val imageurl = post["imageUrl"] as String
-        if(imageurl.isEmpty()){
-            holder.postImageView.visibility = View.GONE
-        }
-        holder.postImageView.setOnClickListener { showImageDialog(holder.itemView.context, post["imageUrl"] as String) }
-        Glide.with(holder.itemView.context)
-            .load(post["profileImage"] as String)
-            .circleCrop()
-            .into(holder.postProfileImage)
+        holder.accountPosition.text = post["position"] as? String ?: "Unknown"
+        holder.postContent.text = post["content"] as? String ?: "No Content"
 
-        val timestamp = post["timestamp"] as Long
-        val timeAgo = getTimeAgo(timestamp)
-        holder.postDate.text = timeAgo
+        if (imageUrl.isEmpty()) {
+            holder.postImageView.visibility = GONE
+        } else {
+            holder.postImageView.visibility = VISIBLE
+            Glide.with(holder.itemView.context)
+                .load(imageUrl)
+                .fitCenter()
+                .into(holder.postImageView)
+        }
+
+        holder.postImageView.setOnClickListener {
+            showImageDialog(holder.itemView.context, imageUrl)
+        }
+
+        val timestamp = post["timestamp"] as? Long ?: 0L
+        holder.postDate.text = getTimeAgo(timestamp)
 
         var readButtonClicked = false
         holder.Readcontent.setOnClickListener {
-            holder.showcontent.visibility =View.VISIBLE
-            holder.Readindicator.visibility = View.GONE
-            database.child("$PostKey/Read").child(key).child("name").setValue(name)
-            database.child("$PostKey/Read").child(key).child("imageUrl").setValue(Image)
-
-            readButtonClicked = !readButtonClicked // Toggle the flag
-            if (readButtonClicked) {
-                holder.Readcontent.setBackgroundResource(R.drawable.round_keyboard_arrow_up_24)
-            } else {
-                holder.Readcontent.setBackgroundResource(R.drawable.round_keyboard_arrow_down_24)
-                holder.showcontent.visibility = View.GONE
-            }
+            readButtonClicked = !readButtonClicked
+            holder.showcontent.visibility = if (readButtonClicked) VISIBLE else GONE
+            holder.Readindicator.visibility = GONE
+            holder.Readcontent.setBackgroundResource(
+                if (readButtonClicked) R.drawable.round_keyboard_arrow_up_24 else R.drawable.round_keyboard_arrow_down_24
+            )
+            database2.setValue("yes")
         }
-//        checkifalreadyViewed
+
+        // Spinner setup
+        val spinnerStatusList = listOf("Pending", "Processing", "Completed")
+        val currentStatus = post["status"] as? String ?: "Pending"
+        setupStatusSpinner(holder.itemView.context, holder.StatusSpinner, spinnerStatusList, currentStatus, postKey, keySecret)
     }
+    private fun setupStatusSpinner(
+        context: Context,
+        spinner: Spinner,
+        statusList: List<String>,
+        initialStatus: String,
+        postKey: String,
+        keySecret: String
+    ) {
+        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, statusList).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        spinner.adapter = adapter
+
+        val initialIndex = statusList.indexOf(initialStatus).takeIf { it >= 0 } ?: 0
+        spinner.setSelection(initialIndex)
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, selectedPosition: Int, id: Long) {
+                val selectedStatus = statusList[selectedPosition]
+                if (selectedStatus != initialStatus) {
+                    val database = FirebaseDatabase.getInstance()
+                        .getReference("Users/$keySecret/Post/$postKey/status")
+                    database.setValue(selectedStatus)
+                        .addOnSuccessListener {
+                            Log.d("SpinnerUpdate", "Updated status for postKey: $postKey to $selectedStatus")
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.e("SpinnerUpdateError", "Failed to update status: ${exception.message}")
+                        }
+                }
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+    }
+
 
     override fun getItemCount(): Int = posts.size
 
-    // The getTimeAgo function that formats the timestamp to relative time or date
     private fun getTimeAgo(timestamp: Long): String {
         val now = System.currentTimeMillis()
         val diffInMillis = now - timestamp
 
-        // Handle posts that are less than a minute old
-        if (diffInMillis < DateUtils.MINUTE_IN_MILLIS) {
-            return "Just now"
+        return when {
+            diffInMillis < DateUtils.MINUTE_IN_MILLIS -> "Just now"
+            diffInMillis > DateUtils.DAY_IN_MILLIS * 7 -> SimpleDateFormat("MM/dd/yyyy", Locale.getDefault()).format(Date(timestamp))
+            else -> DateUtils.getRelativeTimeSpanString(timestamp, now, DateUtils.MINUTE_IN_MILLIS).toString()
         }
-
-        // If the post is older than 7 days, show the full date
-        if (diffInMillis > DateUtils.DAY_IN_MILLIS * 7) {
-            val format = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-            return format.format(Date(timestamp))
-        }
-
-        // For posts within the last 7 days, show relative time like "1 minute ago"
-        return DateUtils.getRelativeTimeSpanString(timestamp, now, DateUtils.MINUTE_IN_MILLIS).toString()
     }
+
     private fun showImageDialog(context: Context, imageUrl: String) {
         val dialog = Dialog(context)
-        dialog.setContentView(R.layout.view_post_image) // Inflate your dialog layout
+        dialog.setContentView(R.layout.view_post_image)
 
         val dialogImageView = dialog.findViewById<ImageView>(R.id.dialogImageView)
         Glide.with(context)

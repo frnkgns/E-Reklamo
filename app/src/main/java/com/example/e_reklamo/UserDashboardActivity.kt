@@ -20,6 +20,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -64,6 +65,8 @@ class UserDashboardActivity : AppCompatActivity() {
     private lateinit var NewUnderLine: View
     private lateinit var ComplainBtn: TextView
     private lateinit var ComplainUnderLine: View
+    private lateinit var MyComplainBtn: TextView
+    private lateinit var MyComplainUnderLine: View
 
     private lateinit var recycleriew: RecyclerView
     private lateinit var temprecycler: RecyclerView
@@ -72,10 +75,11 @@ class UserDashboardActivity : AppCompatActivity() {
     private lateinit var ProfilePic: ImageView
     private lateinit var postImage: ImageView
     private lateinit var OfficialImage: ImageView
+    private lateinit var ImageData: ImageView
+    private lateinit var ImageDataLayout: LinearLayout
 
     private lateinit var purpose: String
-    private lateinit var AddOfficial: Button
-    private lateinit var AddHotline: Button
+
     private lateinit var AddBtnsLayout: LinearLayout
 
     private val supabase = createSupabaseClient(
@@ -88,7 +92,6 @@ class UserDashboardActivity : AppCompatActivity() {
     private val bucket = supabase.storage.from("images")
     private lateinit var imagePickerLauncher: ActivityResultLauncher<Intent>
 
-
     @SuppressLint("MissingInflatedId", "SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,7 +102,6 @@ class UserDashboardActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
 
         makeFullscreen()
         //region Retrieve Shared Preference
@@ -143,35 +145,52 @@ class UserDashboardActivity : AppCompatActivity() {
         NewUnderLine = findViewById(R.id.newsunderline)
         ComplainBtn = findViewById(R.id.complainbtn)
         ComplainUnderLine = findViewById(R.id.complainsunderline)
-        //endregion
-        AddOfficial = findViewById(R.id.addofficialbtn)
-        AddHotline = findViewById(R.id.addhotlinebtn)
+        MyComplainBtn = findViewById(R.id.mycomplainbtn)
+        MyComplainUnderLine = findViewById(R.id.mycomplainsunderline)
+//        AddOfficial = findViewById(R.id.addofficialbtn)
+//        AddHotline = findViewById(R.id.addhotlinebtn)
         AddBtnsLayout = findViewById(R.id.otherBtnLayout)
-        AddOfficial.setOnClickListener { AddDataUsingNavbar(1) }
-        AddHotline.setOnClickListener { AddDataUsingNavbar(2) }
+        postContent = findViewById(R.id.post)
+        //endregion
+        ImageData = findViewById(R.id.imagedata)
+        ImageDataLayout = findViewById(R.id.imagedatalayout)
+
+//        AddOfficial.setOnClickListener { AddDataUsingNavbar(1) }
+//        AddHotline.setOnClickListener { AddDataUsingNavbar(2) }
+
         NewsBtn.setOnClickListener {
-            getAllPostFromFirebase("official", "", "", userKey,"")
+            getAllPostFromFirebase(accounttype, "official","", userKey)
             NewsBtn.setTextColor(android.graphics.Color.WHITE)
             ComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
+            MyComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             NewUnderLine.visibility = VISIBLE
             ComplainUnderLine.visibility = INVISIBLE
+            MyComplainUnderLine.visibility = INVISIBLE
+            postContent.visibility = VISIBLE
+
+            postContent.visibility = if(accounttype == "user") GONE else VISIBLE
         }
         ComplainBtn.setOnClickListener {
-            if(accounttype != "user"){
-                getAllPostFromFirebase("user", profilUri, name, userKey, "")
-            } else {
-                getMyComplain(userKey)
-            }
+            getAllPostFromFirebase(accounttype, "user", "", userKey)
             ComplainBtn.setTextColor(android.graphics.Color.WHITE)
             NewsBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
+            MyComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             NewUnderLine.visibility = INVISIBLE
             ComplainUnderLine.visibility = VISIBLE
+            MyComplainUnderLine.visibility = INVISIBLE
+            postContent.visibility = GONE
         }
-        if (accounttype != "user"){
-            NewsBtn.performClick()
-            getAllPostFromFirebase("user", profilUri, name, userKey, "check")
-        } else {
-            NewsBtn.performClick()
+        MyComplainBtn.setOnClickListener {
+            getMyComplain(userKey)
+
+            MyComplainBtn.setTextColor(android.graphics.Color.WHITE)
+            NewsBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
+            ComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
+            NewUnderLine.visibility = INVISIBLE
+            ComplainUnderLine.visibility = INVISIBLE
+            MyComplainUnderLine.visibility = VISIBLE
+            postContent.visibility = VISIBLE
+            postContent.visibility = if(accounttype == "user") VISIBLE else GONE
         }
 
         nametxt.text = name
@@ -188,45 +207,55 @@ class UserDashboardActivity : AppCompatActivity() {
         //region Card visibility Condition
         val cardInfo = findViewById<View>(R.id.cardinfo)
         val line = findViewById<View>(R.id.separator)
-        cardInfo.visibility = if (accounttype == "admin") { GONE } else { VISIBLE }
-        line.visibility = if (accounttype == "admin") { GONE } else { VISIBLE }
+        cardInfo.visibility = if (accounttype == "official") { GONE } else { VISIBLE }
+        line.visibility = if (accounttype == "official") { GONE } else { VISIBLE }
         //endregion
 
         purpose = ""
-        postContent = findViewById(R.id.post)
-        postContent.visibility = if(accounttype == "admin") GONE else VISIBLE
         postContent.setOnClickListener {
             showPostDialog(accounttype, userKey)
         }
-
+        if (accounttype == "official"){
+            MyComplainBtn.visibility = GONE
+            MyComplainUnderLine.visibility = GONE
+            NewsBtn.performClick()
+            getAllPostFromFirebase(accounttype, "user", "check", "")
+        } else {
+            NewsBtn.performClick()
+        }
         findViewById<TextView>(R.id.nav_home).setOnClickListener {
             AddBtnsLayout.visibility = GONE
             NewsBtn.visibility = VISIBLE
             ComplainBtn.visibility = VISIBLE
             NewsBtn.performClick()
             drawerLayout.closeDrawer(GravityCompat.START)
+            recycleriew.visibility = VISIBLE
+
+            ImageDataLayout.visibility = GONE
         }
         findViewById<TextView>(R.id.nav_officials).setOnClickListener {
             AddBtnsLayout.visibility = VISIBLE
-            AddOfficial.visibility = VISIBLE
-            AddHotline.visibility = GONE
             NewsBtn.visibility = GONE
             ComplainBtn.visibility = GONE
             NewUnderLine.visibility = GONE
             ComplainUnderLine.visibility = GONE
-            getOtherData("BarangayOfficials", accounttype)
             drawerLayout.closeDrawer(GravityCompat.START)
+            recycleriew.visibility = GONE
+
+            ImageDataLayout.visibility = VISIBLE
+            ImageData.setImageResource(R.drawable.barangayofficial)
         }
         findViewById<TextView>(R.id.nav_hotlines).setOnClickListener {
             AddBtnsLayout.visibility = VISIBLE
-            AddOfficial.visibility = GONE
-            AddHotline.visibility = VISIBLE
             NewsBtn.visibility = GONE
             NewUnderLine.visibility = GONE
             ComplainUnderLine.visibility = GONE
             ComplainBtn.visibility = GONE
-            getOtherData("Hotlines", accounttype)
             drawerLayout.closeDrawer(GravityCompat.START)
+            recycleriew.visibility = GONE
+
+            ImageDataLayout.visibility = VISIBLE
+            ImageData.setImageResource(R.drawable.hotline)
         }
         //region Logout
         findViewById<TextView>(R.id.nav_logout).setOnClickListener {
@@ -266,17 +295,18 @@ class UserDashboardActivity : AppCompatActivity() {
         //endregion
     }
     //region Retrieved Post from Database
-    fun getAllPostFromFirebase(accountType: String, Image: String, name: String, key: String, Purpose: String) {
+    fun getAllPostFromFirebase(accountType: String, getPostFrom: String, Purpose: String, key:String) {
         progressBar.visibility = VISIBLE
         val postsList = mutableListOf<Map<String, Any>>()
         val temppostsList = mutableListOf<Map<String, Any>>()
+
         val database = FirebaseDatabase.getInstance().reference
         database.child("Users").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (userSnapshot in snapshot.children) {
                     val posterAccountType = userSnapshot.child("Info").child("accounttype").getValue(String::class.java)
 
-                    if (posterAccountType == accountType) {
+                    if (posterAccountType == getPostFrom) {
                         val name = userSnapshot.child("Info").child("name").getValue(String::class.java).orEmpty()
                         val position = userSnapshot.child("Info").child("position").getValue(String::class.java).orEmpty()
                         val profileUri = userSnapshot.child("Info").child("profileImage").getValue(String::class.java).orEmpty()
@@ -286,6 +316,8 @@ class UserDashboardActivity : AppCompatActivity() {
                             val date = postSnapshot.child("date").getValue(String::class.java).orEmpty()
                             val PostKey = postSnapshot.child("postkey").getValue(String::class.java).orEmpty()
                             val KeySecret = postSnapshot.child("keysecret").getValue(String::class.java).orEmpty()
+                            val poststatus = postSnapshot.child("status").getValue(String::class.java) ?: "Pending"
+                            val readStatus = postSnapshot.child("read").getValue(String::class.java) ?: "no"
 
                             // We assume that you are saving the timestamp in milliseconds
                             val timestamp = postSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
@@ -302,6 +334,8 @@ class UserDashboardActivity : AppCompatActivity() {
                                 "imageUrl" to ImageUrl,
                                 "profileImage" to profileUri,
                                 "posteraccountType" to posterAccountType,
+                                "status" to poststatus,
+                                "read" to readStatus
                             )
                             if(Purpose == "check"){
                                 temppostsList.add(postMap)
@@ -316,15 +350,15 @@ class UserDashboardActivity : AppCompatActivity() {
 
                 if(Purpose == "check"){
                     temppostsList.sortByDescending { it["timestamp"] as Long }
-                    val adapter = ComplainGetAdapter(temppostsList, Image, name, key, ComplainBtn)
+                    val adapter = ComplainGetAdapter(temppostsList, accountType, ComplainBtn)
                     temprecycler.adapter = adapter
                 } else {
                     postsList.sortByDescending { it["timestamp"] as Long }
                     if(accountType == "user"){
-                        val adapter = ComplainGetAdapter(postsList, Image, name, key, ComplainBtn)
+                        val adapter = PostGetAdapter(postsList, "", progressBar)
                         recycleriew.adapter = adapter
                     } else if(accountType == "official"){
-                        val adapter = PostGetAdapter(postsList, key, progressBar)
+                        val adapter = ComplainGetAdapter(postsList, accountType, ComplainBtn)
                         recycleriew.adapter = adapter
                     }
                 }
@@ -358,6 +392,8 @@ class UserDashboardActivity : AppCompatActivity() {
                         val KeySecret = postSnapshot.child("keysecret").getValue(String::class.java).orEmpty()
                         val timestamp = postSnapshot.child("timestamp").getValue(Long::class.java) ?: System.currentTimeMillis()
                         val ImageUrl = postSnapshot.child("imageUrl").getValue(String::class.java).orEmpty()
+                        val postStatus = postSnapshot.child("status").getValue(String::class.java) ?: "Pending"
+                        val postRead = postSnapshot.child("read").getValue(String::class.java) ?: "no"
 
                         val postMap = mapOf(
                             "name" to name,
@@ -369,12 +405,14 @@ class UserDashboardActivity : AppCompatActivity() {
                             "timestamp" to timestamp,
                             "imageUrl" to ImageUrl,
                             "profileImage" to profileUri,
+                            "status" to postStatus,
+                            "read" to postRead
                         )
                         postsList.add(postMap)
 
                         // Sort posts by timestamp in descending order (latest posts first)
                         postsList.sortByDescending { it["timestamp"] as Long }
-                        val adapter = PostGetAdapter(postsList, "user", progressBar)
+                        val adapter = PostGetAdapter(postsList, userKey, progressBar)
                         recycleriew.adapter = adapter
                     }
                 }
@@ -457,44 +495,44 @@ class UserDashboardActivity : AppCompatActivity() {
     }
     //endregion
     //region Add Hotline
-    private fun AddDataUsingNavbar(Type: Int) {
-        // Create the Dialog
-        val dialog = Dialog(this)
-        dialog.setContentView(R.layout.addhotline_or_barangayofficial)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        val addofficialbtn: Button = dialog.findViewById(R.id.savedcreatdentails)
-        val OfficialName: EditText = dialog.findViewById(R.id.officialname)
-        val OfficialPosition: EditText = dialog.findViewById(R.id.officialposition)
-        OfficialImage = dialog.findViewById(R.id.officialimage)
-        OfficialPosition.hint = if(Type == 1) "Barangay Position" else "Hotline Number"
-        OfficialPosition.inputType = if(Type == 1) { InputType.TYPE_CLASS_TEXT } else { InputType.TYPE_CLASS_NUMBER}
-
-        OfficialImage.setOnClickListener{
-            purpose = "OfficialImage"
-            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            imagePickerLauncher.launch(intent)
-        }
-
-        addofficialbtn.setOnClickListener {
-            val name = OfficialName.text.toString().trim()
-            val position = OfficialPosition.text.toString().trim() // Get official position
-            val imageUri = OfficialImage.tag as? Uri
-  
-            if (name.isNotEmpty() && position.isNotEmpty()) {
-                saveOfficialorHotline(name, position, Type, imageUri!!) // Pass name and position
-                dialog.dismiss()
-            } else {
-                if (name.isEmpty()) {
-                    OfficialName.error = "Name cannot be empty"
-                }
-                if (position.isEmpty()) {
-                    OfficialPosition.error = "Position cannot be empty"
-                }
-            }
-        }
-
-        dialog.show()
-    }
+//    private fun AddDataUsingNavbar(Type: Int) {
+//        // Create the Dialog
+//        val dialog = Dialog(this)
+//        dialog.setContentView(R.layout.addhotline_or_barangayofficial)
+//        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+//        val addofficialbtn: Button = dialog.findViewById(R.id.savedcreatdentails)
+//        val OfficialName: EditText = dialog.findViewById(R.id.officialname)
+//        val OfficialPosition: EditText = dialog.findViewById(R.id.officialposition)
+//        OfficialImage = dialog.findViewById(R.id.officialimage)
+//        OfficialPosition.hint = if(Type == 1) "Barangay Position" else "Hotline Number"
+//        OfficialPosition.inputType = if(Type == 1) { InputType.TYPE_CLASS_TEXT } else { InputType.TYPE_CLASS_NUMBER}
+//
+//        OfficialImage.setOnClickListener{
+//            purpose = "OfficialImage"
+//            val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+//            imagePickerLauncher.launch(intent)
+//        }
+//
+//        addofficialbtn.setOnClickListener {
+//            val name = OfficialName.text.toString().trim()
+//            val position = OfficialPosition.text.toString().trim() // Get official position
+//            val imageUri = OfficialImage.tag as? Uri
+//
+//            if (name.isNotEmpty() && position.isNotEmpty()) {
+//                saveOfficialorHotline(name, position, Type, imageUri!!) // Pass name and position
+//                dialog.dismiss()
+//            } else {
+//                if (name.isEmpty()) {
+//                    OfficialName.error = "Name cannot be empty"
+//                }
+//                if (position.isEmpty()) {
+//                    OfficialPosition.error = "Position cannot be empty"
+//                }
+//            }
+//        }
+//
+//        dialog.show()
+//    }
     //endregion
 
     //region Save Official to Database
@@ -546,99 +584,69 @@ class UserDashboardActivity : AppCompatActivity() {
     private fun savePostToFirebase(content: String, currentDate: String, postImage: ImageView, userKey: String, AccountType: String) {
         progressBar.visibility = VISIBLE
         val databaseRef = FirebaseDatabase.getInstance().getReference("Users/$userKey")
-        databaseRef.addListenerForSingleValueEvent(object : ValueEventListener{
+        databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if (userKey != null) {
+                if (snapshot.exists()) {
+                    val postSnapshot = snapshot.child("PostStatistic")
+                    val postDate = postSnapshot.child("postdate").getValue(String::class.java) ?: ""
+                    var postCount = postSnapshot.child("postcount").getValue(Int::class.java) ?: 0
+
+                    // Reset post count if a new day starts
+                    if (postDate != currentDate) {
+                        postCount = 0
+                        databaseRef.child("PostStatistic/postdate").setValue(currentDate)
+                        databaseRef.child("PostStatistic/postcount").setValue(postCount)
+                    }
+
+                    if (postCount >= 2) {
+                        showToast("You have reached your daily post limit.")
+                        progressBar.visibility = GONE
+                        return
+                    }
+
+                    // Prepare post data
                     val postRef = databaseRef.child("Post").push()
                     val postKey = postRef.key
+                    val postData = mapOf(
+                        "content" to content,
+                        "date" to currentDate,
+                        "timestamp" to ServerValue.TIMESTAMP,
+                        "postkey" to postKey.toString(),
+                        "keysecret" to userKey,
+                        "status" to "Pending",
+                        "read" to "no"
+                    )
 
-                    // Upload image to Supabase if selected
-                    val imageUri = postImage.tag as? Uri
-                    if(imageUri == null){
-                        // Create post data
-                        val postData = mapOf(
-                            "content" to content,
-                            "date" to currentDate,
-                            "timestamp" to ServerValue.TIMESTAMP,
-                            "postkey" to postKey.toString(),
-                            "keysecret" to userKey
-                        )
-
-                        // Save the post data
-                        postRef.setValue(postData)
-                            .addOnSuccessListener {
-                                // Show success message
+                    // Increment post count and save post
+                    postRef.setValue(postData)
+                        .addOnSuccessListener {
+                            databaseRef.child("PostStatistic/postcount").setValue(postCount + 1).addOnSuccessListener {
                                 showToast("Post saved successfully!")
                                 progressBar.visibility = GONE
-                                if(AccountType == "user"){
+                                if (AccountType == "user") {
                                     ComplainBtn.performClick()
                                 } else {
                                     NewsBtn.performClick()
                                 }
                             }
-                            .addOnFailureListener { error ->
-                                // Show error message
-                                showToast("Error saving post: ${error.message}")
-                                progressBar.visibility = GONE
-                            }
-                    }
-                    imageUri?.let {
-                        lifecycleScope.launch {
-                            try {
-
-                                // Upload to Supabase storage
-                                val fileName = getFileName(it) // Use your existing method to get the file name
-                                val byteArray = contentResolver.openInputStream(it)?.readBytes() ?: throw Exception("File not found")
-                                val uploadResult = bucket.upload(fileName, byteArray)
-
-                                if (uploadResult.key != null) {
-                                    val imageUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co/storage/v1/object/public/images/$fileName"
-
-                                    // Create post data
-                                    val postData = mapOf(
-                                        "content" to content,
-                                        "date" to currentDate,
-                                        "timestamp" to ServerValue.TIMESTAMP,
-                                        "postkey" to postKey.toString(),
-                                        "keysecret" to userKey.toString(),
-                                        "imageUrl" to imageUrl // Include the image URL in the post data
-                                    )
-
-                                    // Save the post data
-                                    postRef.setValue(postData)
-                                        .addOnSuccessListener {
-                                            // Show success message
-                                            showToast("Post saved successfully!")
-                                            progressBar.visibility = GONE
-                                            if(AccountType == "user"){
-                                                ComplainBtn.performClick()
-                                            } else {
-                                                NewsBtn.performClick()
-                                            }
-                                        }
-                                        .addOnFailureListener { error ->
-                                            // Show error message
-                                            showToast("Error saving post: ${error.message}")
-                                            progressBar.visibility = GONE
-                                        }
-                                }
-                            } catch (e: Exception) {
-                                // Handle error
-                                progressBar.visibility = GONE
-                                showToast("Upload failed: ${e.message}")
-                            }
                         }
-                    }
-                    //endregion
+                        .addOnFailureListener { error ->
+                            showToast("Error saving post: ${error.message}")
+                            progressBar.visibility = GONE
+                        }
+                } else {
+                    showToast("Error: User data not found.")
+                    progressBar.visibility = GONE
                 }
-                progressBar.visibility = GONE
             }
 
             override fun onCancelled(error: DatabaseError) {
                 showToast("Error retrieving user data: ${error.message}")
+                progressBar.visibility = GONE
             }
         })
-    }    //endregion
+    }
+    //endregion
     //region Get Image File Name
     private fun getFileName(uri: Uri): String {
         var fileName = ""

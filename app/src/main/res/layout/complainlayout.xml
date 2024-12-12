@@ -36,7 +36,7 @@
                     android:layout_width="50dp"
                     android:layout_height="50dp"
                     android:layout_marginEnd="10dp"
-                    android:src="@drawable/oval" />
+                    android:src="@drawable/anonymous" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -133,6 +133,23 @@
                         android:src="@drawable/sampleimg"
                         />
                 </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/spinnerLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:layout_marginTop="-20dp"
+                android:layout_marginBottom="20dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Status: "
+                    android:textColor="@color/black"/>
+                <Spinner
+                    android:id="@+id/complaintstatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
