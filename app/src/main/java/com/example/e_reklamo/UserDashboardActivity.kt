@@ -159,7 +159,7 @@ class UserDashboardActivity : AppCompatActivity() {
 //        AddHotline.setOnClickListener { AddDataUsingNavbar(2) }
 
         NewsBtn.setOnClickListener {
-            getAllPostFromFirebase(accounttype, "official","", userKey)
+            getAllPostFromFirebase(accounttype, "official","", userKey, "news")
             NewsBtn.setTextColor(android.graphics.Color.WHITE)
             ComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             MyComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
@@ -171,7 +171,7 @@ class UserDashboardActivity : AppCompatActivity() {
             postContent.visibility = if(accounttype == "user") GONE else VISIBLE
         }
         ComplainBtn.setOnClickListener {
-            getAllPostFromFirebase(accounttype, "user", "", userKey)
+            getAllPostFromFirebase(accounttype, "user", "", userKey, "complain")
             ComplainBtn.setTextColor(android.graphics.Color.WHITE)
             NewsBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
             MyComplainBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
@@ -181,7 +181,7 @@ class UserDashboardActivity : AppCompatActivity() {
             postContent.visibility = GONE
         }
         MyComplainBtn.setOnClickListener {
-            getMyComplain(userKey)
+            getMyComplain(userKey, "mycomplain")
 
             MyComplainBtn.setTextColor(android.graphics.Color.WHITE)
             NewsBtn.setTextColor(android.graphics.Color.parseColor("#7393B3"))
@@ -219,7 +219,7 @@ class UserDashboardActivity : AppCompatActivity() {
             MyComplainBtn.visibility = GONE
             MyComplainUnderLine.visibility = GONE
             NewsBtn.performClick()
-            getAllPostFromFirebase(accounttype, "user", "check", "")
+            getAllPostFromFirebase(accounttype, "user", "check", "", "news")
         } else {
             NewsBtn.performClick()
         }
@@ -295,7 +295,7 @@ class UserDashboardActivity : AppCompatActivity() {
         //endregion
     }
     //region Retrieved Post from Database
-    fun getAllPostFromFirebase(accountType: String, getPostFrom: String, Purpose: String, key:String) {
+    fun getAllPostFromFirebase(accountType: String, getPostFrom: String, Purpose: String, key:String, purpose:String) {
         progressBar.visibility = VISIBLE
         val postsList = mutableListOf<Map<String, Any>>()
         val temppostsList = mutableListOf<Map<String, Any>>()
@@ -355,10 +355,13 @@ class UserDashboardActivity : AppCompatActivity() {
                 } else {
                     postsList.sortByDescending { it["timestamp"] as Long }
                     if(accountType == "user"){
-                        val adapter = PostGetAdapter(postsList, "", progressBar)
+                        val adapter = PostGetAdapter(postsList, "", progressBar, accountType, purpose)
                         recycleriew.adapter = adapter
-                    } else if(accountType == "official"){
+                    } else if(accountType == "official" && getPostFrom == "user"){
                         val adapter = ComplainGetAdapter(postsList, accountType, ComplainBtn)
+                        recycleriew.adapter = adapter
+                    } else if(accountType == "official" && getPostFrom == "official"){
+                        val adapter = PostGetAdapter(postsList, key, progressBar, accountType, purpose)
                         recycleriew.adapter = adapter
                     }
                 }
@@ -372,7 +375,7 @@ class UserDashboardActivity : AppCompatActivity() {
     }
     //endregion
     //region Get My Complain
-    fun getMyComplain(userKey: String) {
+    fun getMyComplain(userKey: String, purpose: String) {
         progressBar.visibility = VISIBLE
         val postsList = mutableListOf<Map<String, Any>>()
         val database = FirebaseDatabase.getInstance().getReference("Users/$userKey")
@@ -412,7 +415,7 @@ class UserDashboardActivity : AppCompatActivity() {
 
                         // Sort posts by timestamp in descending order (latest posts first)
                         postsList.sortByDescending { it["timestamp"] as Long }
-                        val adapter = PostGetAdapter(postsList, userKey, progressBar)
+                        val adapter = PostGetAdapter(postsList, userKey, progressBar, "user", purpose)
                         recycleriew.adapter = adapter
                     }
                 }

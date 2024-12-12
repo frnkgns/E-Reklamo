@@ -13,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -25,8 +26,10 @@ import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 
-class PostGetAdapter(private val posts: List<Map<String, Any>>, private val userKey: String,
-                     private val Progreessbar: ProgressBar) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
+class PostGetAdapter(private val posts: List<Map<String, Any>>,
+                     private val userKey: String,
+                     private val Progreessbar: ProgressBar, private val AccountType: String,
+                     private val Purpose: String) : RecyclerView.Adapter<PostGetAdapter.PostViewHolder>() {
 
     private val supabase = createSupabaseClient(
         supabaseUrl = "https://zdabqmaoocqiqjlbjymi.supabase.co",
@@ -46,7 +49,6 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val user
         val statusLayout: LinearLayout = view.findViewById(R.id.statuslayout)
         val postStatus: TextView = view.findViewById(R.id.status)
         val postRead: TextView = view.findViewById(R.id.read)
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
@@ -57,10 +59,30 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val user
     @SuppressLint("SetTextI18n")
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
         val post = posts[position]
-
-        holder.accountName.text = "User${(post["keysecret"] as String).take(5)}"
         holder.accountPosition.text = post["position"] as String
         holder.postContent.text = post["content"] as String
+        val PostAccountTyper = post["keysecret"] as String
+
+        if(Purpose == "news"){
+            val brgyprofile = ContextCompat.getDrawable(holder.itemView.context, R.drawable.brngaylogo)
+            holder.accountName.text = "Barangay Official"
+            Glide.with(holder.itemView.context)
+                .load(brgyprofile)
+                .circleCrop()
+                .into(holder.postProfileImage)
+
+        } else if(Purpose == "mycomplain"){
+            holder.accountName.text = "User${(post["keysecret"] as String).take(5)}"
+            if(userKey == PostAccountTyper){
+                Glide.with(holder.itemView.context)
+                    .load(post["profileImage"] as String)
+                    .circleCrop()
+                    .into(holder.postProfileImage)
+            }
+        } else {
+            holder.accountName.text = "User${(post["keysecret"] as String).take(5)}"
+        }
+
         Glide.with(holder.itemView.context)
             .load(post["imageUrl"] as String)
             .fitCenter()
@@ -73,13 +95,9 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val user
             showImageDialog(holder.itemView.context, post["imageUrl"] as String)
         }
 
-        // Get the timestamp from the post data (saved as long)
         val timestamp = post["timestamp"] as Long
-        // Call the getTimeAgo function to get the formatted time
         val timeAgo = getTimeAgo(timestamp)
-        // Set the time in the postDate TextView
         holder.postDate.text = timeAgo
-        val PostAccountTyper = post["keysecret"] as String
 
         val postStatus = post["status"] as String
         val postRead = post["read"] as String
@@ -92,13 +110,7 @@ class PostGetAdapter(private val posts: List<Map<String, Any>>, private val user
             holder.postRead.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.round_check_circle_outline_24, 0)
         }
         holder.deletePost.visibility = if(userKey == PostAccountTyper) View.VISIBLE else View.GONE
-        holder.statusLayout.visibility = if(userKey == PostAccountTyper) View.VISIBLE else View.GONE
-        if(userKey == PostAccountTyper){
-            Glide.with(holder.itemView.context)
-                .load(post["profileImage"] as String)
-                .circleCrop()
-                .into(holder.postProfileImage)
-        }
+        holder.statusLayout.visibility = if(userKey == PostAccountTyper && AccountType == "user") View.VISIBLE else View.GONE
         holder.deletePost.setOnClickListener {
             deletePost(post["postkey"].toString(), holder.itemView.context, post["keysecret"].toString(), post["imageUrl"].toString())
         }

@@ -55,11 +55,7 @@ class ComplainGetAdapter(
         val keySecret = post["keysecret"] as? String ?: ""
         val imageUrl = post["imageUrl"] as? String ?: ""
 
-        holder.accountName.text = if (accountType == "user") {
-            "User${(keySecret).take(5)}"
-        } else {
-            post["name"] as? String ?: "Unknown"
-        }
+        holder.accountName.text = "User${(keySecret).take(5)}"
 
         if (accountType == "user") {
             holder.Readcontent.visibility = GONE
